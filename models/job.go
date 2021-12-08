@@ -11,7 +11,7 @@ type Job struct {
     name string
 }
 
-func (f Job) Data(name string) {
+func (f *Job) Data(name string) {
     f.name = name
     fmt.Println("Name set to: ", f.name)
 }
