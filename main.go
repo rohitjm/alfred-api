@@ -96,22 +96,6 @@ func handleSms(w http.ResponseWriter, r *http.Request) {
     w.Write(x)
 }
 
-func handleSms2(w http.ResponseWriter, r *http.Request) {
-    fmt.Println(w, "Handling SMS 2!")
-
-    res := Response{}
-    res.Message = "Hello from Rohit @Twilio!"
-
-    x, err := xml.MarshalIndent(res, "", "	")
-    if err != nil {
-	http.Error(w, err.Error(), http.StatusInternalServerError)
-	return
-    }
-
-    w.Header().Set("Content-Type", "application/xml")
-    w.Write(x)
-}
-
 func createJob(w http.ResponseWriter, r *http.Request){
     fmt.Println(w, "Creating Job")
     j := job.Job{}
