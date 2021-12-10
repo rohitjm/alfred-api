@@ -5,6 +5,7 @@ import (
 
     "fmt"
     "log"
+    "strconv"
     "net/http"
     "io/ioutil"
     "encoding/xml"
@@ -55,6 +56,18 @@ func getNationalize(name string) NationalizeResponse {
     return p
 }
 
+func getReturnText(data NationalizeResponse) string {
+    res := fmt.Sprintf("Hello %s your name has ties to the following countries:\n", data.Name)
+    for _, value := range data.Countries {
+        fmt.Println(value)
+	probInt := int(value.Probability * 100)
+	toAdd := fmt.Sprintf(" %s %% from %s.\n", strconv.Itoa(probInt), value.Id)
+	res += toAdd
+    }
+
+    return res
+}
+
 func handleSms(w http.ResponseWriter, r *http.Request) {
     fmt.Println(w, "Handling SMS!")
 
@@ -63,23 +76,21 @@ func handleSms(w http.ResponseWriter, r *http.Request) {
     // Do something with the Person struct...
     fmt.Println(w, "Request Body: ", body)
 
-    // Input validation
+    // TODO: Input validation
     // 1. make sure single word
     // 2. Trim spaces
 
     nationalize_response := getNationalize(body)
+    response_text := getReturnText(nationalize_response)
 
-    fmt.Println("From HandleSMS: ", nationalize_response.Name)
+    fmt.Println(response_text)
 
     res := Response{}
-    res.Message = fmt.Sprintf("Hello! %s", nationalize_response.Name)
-    // res.Message = "Hello from Rohit @Twilio!"
+    res.Message = response_text
 
     x, err := xml.MarshalIndent(res, "", "	")
     if err != nil {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	return
-    }
 
     w.Header().Set("Content-Type", "application/xml")
     w.Write(x)
