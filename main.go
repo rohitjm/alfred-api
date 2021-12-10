@@ -25,7 +25,14 @@ type NationalizeResponse struct {
 	} `json:"country"`
 }
 
-func homePage(w http.ResponseWriter, r *http.Request){
+type CountryCodeFile struct {
+	CountryCodes []struct {
+		Code string `json:"code"`
+		Name string `json:"name"`
+	} `json:"country_codes"`
+}
+
+func homePage(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Welcome to the HomePage!")
     fmt.Println("Endpoint Hit: homePage")
 }
@@ -56,12 +63,38 @@ func getNationalize(name string) NationalizeResponse {
     return p
 }
 
+func getCountryNameFromId(mapping CountryCodeFile, id string) string {
+
+    for _, value := range mapping.CountryCodes {
+        if(value.Code == id) {
+            return value.Name
+	}
+    }
+
+    return "Not Found"
+}
+
 func getReturnText(data NationalizeResponse) string {
+
+    // read file
+    rawdata, err := ioutil.ReadFile("./country_codes.json")
+    if err != nil {
+      fmt.Print(err)
+    }
+
+    var file CountryCodeFile
+
+    // unmarshall it
+    err = json.Unmarshal(rawdata, &file)
+    if err != nil {
+        fmt.Println("error:", err)
+    }
+
     res := fmt.Sprintf("Hello %s your name has ties to the following countries:\n", data.Name)
     for _, value := range data.Countries {
         fmt.Println(value)
 	probInt := int(value.Probability * 100)
-	toAdd := fmt.Sprintf(" %s %% from %s.\n", strconv.Itoa(probInt), value.Id)
+	toAdd := fmt.Sprintf(" %s %% from %s.\n", strconv.Itoa(probInt), getCountryNameFromId(file, value.Id))
 	res += toAdd
     }
 
@@ -72,9 +105,6 @@ func handleSms(w http.ResponseWriter, r *http.Request) {
     fmt.Println(w, "Handling SMS!")
 
     body := r.FormValue("Body")
-
-    // Do something with the Person struct...
-    fmt.Println(w, "Request Body: ", body)
 
     // TODO: Input validation
     // 1. make sure single word
@@ -91,6 +121,7 @@ func handleSms(w http.ResponseWriter, r *http.Request) {
     x, err := xml.MarshalIndent(res, "", "	")
     if err != nil {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 
     w.Header().Set("Content-Type", "application/xml")
     w.Write(x)
@@ -107,7 +138,6 @@ func handleRequests() {
     router := mux.NewRouter().StrictSlash(true)
     router.HandleFunc("/", homePage)
     router.HandleFunc("/sms", handleSms)
-    router.HandleFunc("/sms2", handleSms2)
     router.HandleFunc("/jobs", createJob)
     log.Fatal(http.ListenAndServe(":10000", router))
 }

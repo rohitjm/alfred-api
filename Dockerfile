@@ -12,6 +12,7 @@ RUN go mod download
 COPY /actions ./actions
 COPY /models ./models
 COPY main.go ./
+COPY country_codes.json ./
 
 RUN go build -o /alfred-api
 
